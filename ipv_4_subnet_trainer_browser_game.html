@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IPv4 Subnet Trainer</title>
+  <style>
+    :root{
+      --bg:#0f1223;--card:#151936;--muted:#a9b2d0;--text:#f5f7ff;--accent:#7dd3fc;--good:#22c55e;--bad:#ef4444;--warn:#f59e0b;
+      --oct1:#3b82f6;--oct2:#22d3ee;--oct3:#a855f7;--oct4:#f97316;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;background:radial-gradient(1200px 600px at 20% -10%,#19204d 0%,#0f1223 60%) fixed;color:var(--text)}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    h1{font-size:clamp(24px,3.6vw,38px);margin:8px 0 4px}
+    p.sub{color:var(--muted);margin:0 0 20px}
+
+    /* Chart styles */
+    .chart-container{position:sticky;top:0;background:rgba(15,18,35,.95);backdrop-filter:blur(6px);z-index:10;padding:8px 0 10px;border-bottom:1px solid rgba(255,255,255,.1)}
+    .chart-labels{display:grid;grid-template-columns:50px repeat(32,1fr);font-size:11px;color:var(--muted);margin:0 10px 4px 0}
+    .chart-labels span{grid-row:1}
+    .chart-labels .oct1label{grid-column:2/span 8;text-align:left;color:var(--oct1)}
+    .chart-labels .oct2label{grid-column:10/span 8;text-align:left;color:var(--oct2)}
+    .chart-labels .oct3label{grid-column:18/span 8;text-align:left;color:var(--oct3)}
+    .chart-labels .oct4label{grid-column:26/span 8;text-align:left;color:var(--oct4)}
+    .chart-rows{display:grid;grid-template-columns:50px repeat(32,1fr);font-size:10px;text-align:center}
+    .chart-rows div{padding:3px 0;border:1px solid rgba(255,255,255,.1)}
+    .chart-rows .rowlabel{background:#0b0e22;color:var(--muted);font-weight:600;border:none;text-align:right;padding-right:6px}
+    .oct1{border-color:var(--oct1);color:var(--oct1)}
+    .oct2{border-color:var(--oct2);color:var(--oct2)}
+    .oct3{border-color:var(--oct3);color:var(--oct3)}
+    .oct4{border-color:var(--oct4);color:var(--oct4)}
+
+    .grid{display:grid;gap:16px;grid-template-columns:1.2fr .8fr}
+    .card{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+    .card h2{font-size:18px;margin:0 0 8px}
+    .card .inner{padding:16px}
+    .problem{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+    .pill{background:rgba(125,211,252,.12);color:var(--accent);padding:8px 12px;border:1px solid rgba(125,211,252,.35);border-radius:999px;font-weight:600}
+    .inputs{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+    label{font-size:12px;color:var(--muted);display:block;margin:0 0 6px}
+    input[type=text],select{width:100%;background:#0b0e22;border:1px solid rgba(255,255,255,.12);color:var(--text);padding:10px 12px;border-radius:10px;font-size:16px;outline:none}
+    input[type=text]:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(125,211,252,.18)}
+    .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    button{appearance:none;background:#1b2047;border:1px solid rgba(255,255,255,.12);color:var(--text);padding:10px 14px;border-radius:10px;font-weight:600;cursor:pointer}
+    button.primary{background:linear-gradient(90deg,#3b82f6,#22d3ee);color:#081226;border:none}
+    button.ghost{background:transparent}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    .result{margin-top:12px;padding:12px;border-radius:10px;border:1px dashed rgba(255,255,255,.18)}
+    .ok{border-color:rgba(34,197,94,.45);background:rgba(34,197,94,.08)}
+    .err{border-color:rgba(239,68,68,.45);background:rgba(239,68,68,.08)}
+    .warn{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.08)}
+    .meta{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .kpi{background:#0b0e22;border:1px solid rgba(255,255,255,.08);padding:12px;border-radius:12px;text-align:center}
+    .kpi .big{font-size:24px;font-weight:800}
+    .footer{color:var(--muted);margin-top:18px;font-size:12px}
+    .hr{height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);margin:12px 0}
+    .flex{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+    code.badge{background:#0b0e22;border:1px solid rgba(255,255,255,.12);padding:4px 8px;border-radius:8px}
+    .small{font-size:12px;color:var(--muted)}
+    .hint{margin-top:8px}
+    .toggle{display:flex;gap:8px;align-items:center}
+    .sr{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+    @media (max-width: 880px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>IPv4 Subnet Trainer</h1>
+    <p class="sub">Given an <strong>IPv4 address</strong> and <strong>prefix length (CIDR)</strong>, determine its <strong>network/subnet</strong>, <strong>broadcast</strong>, and <strong>first/last usable</strong> addresses, plus the <strong>subnet mask</strong>.</p>
+
+    <!-- Sticky 32-bit reference chart with aligned labels -->
+    <div class="chart-container">
+      <div class="chart-labels">
+        <span class="oct1label">1st Octet</span>
+        <span class="oct2label">2nd Octet</span>
+        <span class="oct3label">3rd Octet</span>
+        <span class="oct4label">4th Octet</span>
+      </div>
+      <div class="chart-rows" id="chartRows"></div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="inner">
+          <h2>Find the Subnet Information</h2>
+          <div class="problem" id="problem">
+            <span class="pill" id="addr">—</span>
+            <span class="pill" id="cidr">/—</span>
+            <span class="small">(<span id="hostCount">—</span> possible hosts)</span>
+          </div>
+          <div class="hr"></div>
+          <div class="inputs">
+            <div><label for="maskInput">Subnet mask</label><input type="text" id="maskInput" placeholder="e.g. 255.255.255.0" /></div>
+            <div><label for="netInput">Network/Subnet address</label><input type="text" id="netInput" placeholder="e.g. 192.168.1.0" /></div>
+            <div><label for="bcInput">Broadcast address</label><input type="text" id="bcInput" placeholder="e.g. 192.168.1.255" /></div>
+            <div><label for="firstInput">First usable</label><input type="text" id="firstInput" placeholder="e.g. 192.168.1.1" /></div>
+            <div><label for="lastInput">Last usable</label><input type="text" id="lastInput" placeholder="e.g. 192.168.1.254" /></div>
+          </div>
+          <div class="actions">
+            <button class="primary" id="checkBtn">Check</button>
+            <button id="hintBtn">Hint</button>
+            <button class="ghost" id="showBtn">Show answer</button>
+            <button id="nextBtn">Next</button>
+          </div>
+          <div id="feedback" class="result" hidden></div>
+        </div>
+      </section>
+
+      <!-- Stats / Controls -->
+      <aside class="card">
+        <div class="inner">
+          <h2>Stats & Controls</h2>
+          <div class="meta">
+            <div class="kpi"><div class="big" id="score">0</div><div>Score</div></div>
+            <div class="kpi"><div class="big" id="streak">0</div><div>Streak</div></div>
+            <div class="kpi"><div class="big" id="best">0</div><div>Best</div></div>
+          </div>
+          <div class="hr"></div>
+          <div class="flex small">
+            <div>Timer: <code class="badge" id="timer">00:00</code></div>
+            <div>Rounds: <code class="badge" id="round">0</code></div>
+          </div>
+          <div class="hr"></div>
+          <div class="inputs" style="grid-template-columns:1fr;">
+            <div>
+              <label for="modeSelect">Difficulty</label>
+              <select id="modeSelect">
+                <option value="easy">Easy (/24–/26)</option>
+                <option value="standard" selected>Standard (/16–/30)</option>
+                <option value="advanced">Advanced (/8–/30)</option>
+                <option value="edge">Edge (/0–/32)</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex small" style="margin-top:8px">
+            <label class="toggle"><input type="checkbox" id="excludeWeird" checked> Skip /31 and /32</label>
+            <label class="toggle"><input type="checkbox" id="requireGate" checked> Require Net/Bcast first</label>
+          </div>
+          <div class="hr"></div>
+          <details>
+            <summary>How scoring works</summary>
+            <ul class="small">
+              <li>5 checks: mask, network, broadcast, first, last.</li>
+              <li>+1 point per correct (max +5/round).</li>
+              <li>Streak +1 only if all five are correct on the first try.</li>
+            </ul>
+          </details>
+        </div>
+      </aside>
+    </div>
+    <div class="footer">Made with ♥</div>
+  </div>
+
+<script>
+(function(){
+  // =====================
+  // 1) Build the 32-bit reference chart
+  // =====================
+  const chart=document.getElementById('chartRows');
+  if(chart){
+    const octetColor=(i)=> i<8? 'oct1': i<16? 'oct2': i<24? 'oct3':'oct4';
+    const addRow=(label,arrFn)=>{
+      const rowLabel=document.createElement('div');
+      rowLabel.textContent=label; rowLabel.classList.add('rowlabel'); chart.appendChild(rowLabel);
+      for(let i=1;i<=32;i++){
+        const cell=document.createElement('div');
+        cell.textContent=arrFn(i); cell.classList.add(octetColor(i-1)); chart.appendChild(cell);
+      }
+    };
+    addRow('CIDR',(i)=>'/' + i);
+    addRow('Bits',(i)=>[128,64,32,16,8,4,2,1][(i-1)%8]);
+    addRow('Mask',(i)=>[128,192,224,240,248,252,254,255][(i-1)%8]);
+  }
+
+  // =====================
+  // 2) Subnet Trainer Game Logic (restored with scoring/streak/difficulty)
+  // =====================
+  // DOM refs
+  const addrEl=document.getElementById('addr');
+  const cidrEl=document.getElementById('cidr');
+  const hostCountEl=document.getElementById('hostCount');
+  const maskInput=document.getElementById('maskInput');
+  const netInput=document.getElementById('netInput');
+  const bcInput=document.getElementById('bcInput');
+  const firstInput=document.getElementById('firstInput');
+  const lastInput=document.getElementById('lastInput');
+  const checkBtn=document.getElementById('checkBtn');
+  const hintBtn=document.getElementById('hintBtn');
+  const nextBtn=document.getElementById('nextBtn');
+  const showBtn=document.getElementById('showBtn');
+  const feedback=document.getElementById('feedback');
+
+  const scoreEl=document.getElementById('score');
+  const streakEl=document.getElementById('streak');
+  const bestEl=document.getElementById('best');
+  const timerEl=document.getElementById('timer');
+  const roundEl=document.getElementById('round');
+  const modeSelect=document.getElementById('modeSelect');
+  const excludeWeird=document.getElementById('excludeWeird');
+  const requireGate=document.getElementById('requireGate');
+
+  if(!addrEl) return;
+
+  // State
+  const state={
+    ip:'192.168.10.42', cidr:24,
+    round:0, score:0, streak:0, tried:false,
+    best: Number(localStorage.getItem('ipv4Best')||0),
+    start:Date.now(), timer:null
+  };
+
+  // IP math
+  function clamp(n,min,max){return Math.min(max,Math.max(min,n))}
+  function toInt(ip){
+    const p=String(ip).trim().split('.'); if(p.length!==4) return null; let n=0;
+    for(let i=0;i<4;i++){
+      if(p[i]===''||/\D/.test(p[i])) return null; const x=Number(p[i]); if(x<0||x>255) return null; n=(n<<8)|x;
+    }
+    return n>>>0;
+  }
+  function toIp(int){ return [24,16,8,0].map(s=>((int>>>s)&255)).join('.') }
+  function maskFromCidr(c){ c=clamp(c,0,32); return (c===32?0xFFFFFFFF: (0xFFFFFFFF << (32-c))>>>0)>>>0 }
+  function networkOf(ip,c){ return (toInt(ip)&maskFromCidr(c))>>>0 }
+  function broadcastOf(ip,c){ const net=networkOf(ip,c), m=maskFromCidr(c); return (net | (~m >>> 0))>>>0 }
+  function hostCount(c){ if(c===32) return 1; if(c===31) return 2; const bits=32-c; return bits<=0?0:Math.max(0,(2**bits)-2) }
+  function firstUsable(ip,c){ if(c>=31) return null; return (networkOf(ip,c)+1)>>>0 }
+  function lastUsable(ip,c){ if(c>=31) return null; return (broadcastOf(ip,c)-1)>>>0 }
+  function isValidIpString(s){ return toInt(s)!==null }
+
+  // Difficulty -> CIDR
+  function randomCidr(){
+    const mode=modeSelect?.value || 'standard';
+    let c;
+    switch(mode){
+      case 'easy': c = 24 + Math.floor(Math.random()*3); break; // /24-/26
+      case 'standard': c = 16 + Math.floor(Math.random()*15); break; // /16-/30
+      case 'advanced': c = 8 + Math.floor(Math.random()*23); break; // /8-/30
+      case 'edge': c = Math.floor(Math.random()*33); break; // /0-/32
+      default: c = 16 + Math.floor(Math.random()*15);
+    }
+    if(excludeWeird && excludeWeird.checked && (c===31||c===32)) c=30;
+    return c;
+  }
+
+  function randomIp(){
+    const A=[1,10,11,12,13,14,15,16,17,18,19,20,23,24,172,173,192,198,203];
+    const a=A[Math.floor(Math.random()*A.length)];
+    const b=Math.floor(Math.random()*256); const c=Math.floor(Math.random()*256);
+    const D=[1,5,42,99,100,101,150,200,222]; const d=D[Math.floor(Math.random()*D.length)];
+    return `${a}.${b}.${c}.${d}`;
+  }
+
+  // Timer/Stats
+  function renderStats(){
+    scoreEl.textContent=state.score; streakEl.textContent=state.streak; bestEl.textContent=state.best; roundEl.textContent=state.round;
+  }
+  function restartTimer(){
+    state.start=Date.now();
+    if(state.timer) clearInterval(state.timer);
+    state.timer=setInterval(()=>{
+      const secs=Math.floor((Date.now()-state.start)/1000);
+      const m=String(Math.floor(secs/60)).padStart(2,'0');
+      const s=String(secs%60).padStart(2,'0');
+      timerEl.textContent=`${m}:${s}`;
+    },200);
+  }
+
+  // Round setup
+  function setProblem(ip,cidr){
+    state.ip=ip; state.cidr=cidr; state.round++; state.tried=false;
+    addrEl.textContent=ip; cidrEl.textContent='/' + cidr; hostCountEl.textContent=hostCount(cidr);
+    maskInput.value=''; netInput.value=''; bcInput.value=''; firstInput.value=''; lastInput.value='';
+    feedback.hidden=true; feedback.className='result'; feedback.innerHTML='';
+    // gate
+    firstInput.disabled = requireGate?.checked ? true : false;
+    lastInput.disabled  = requireGate?.checked ? true : false;
+
+    maskInput.placeholder='e.g. 255.255.255.0';
+    netInput.placeholder='e.g. ' + toIp(networkOf(ip,cidr));
+    bcInput.placeholder='e.g. ' + toIp(broadcastOf(ip,cidr));
+    firstInput.placeholder='e.g. ' + (firstUsable(ip,cidr)===null?'N/A':toIp(firstUsable(ip,cidr)));
+    lastInput.placeholder='e.g. ' + (lastUsable(ip,cidr)===null?'N/A':toIp(lastUsable(ip,cidr)));
+
+    renderStats(); restartTimer(); maskInput.focus();
+  }
+  function nextRound(){ setProblem(randomIp(), randomCidr()) }
+
+  // Hint / Show
+  function giveHint(){
+    const n=networkOf(state.ip,state.cidr), b=broadcastOf(state.ip,state.cidr), hc=hostCount(state.cidr);
+    const note=(state.cidr>=31)? 'First/Last are N/A for /31-/32.' : 'First = network + 1, Last = broadcast - 1.';
+    feedback.hidden=false; feedback.className='result warn';
+    feedback.innerHTML='Network: <code>'+toIp(n)+'</code> • Broadcast: <code>'+toIp(b)+'</code> • Hosts: <code>'+hc+'</code><br><span class="small">'+note+'</span>';
+  }
+  function showAnswer(){
+    const mask=toIp(maskFromCidr(state.cidr)); const n=networkOf(state.ip,state.cidr), b=broadcastOf(state.ip,state.cidr);
+    const f=firstUsable(state.ip,state.cidr), l=lastUsable(state.ip,state.cidr);
+    maskInput.value=mask; netInput.value=toIp(n); bcInput.value=toIp(b);
+    firstInput.value=f===null?'N/A':toIp(f); lastInput.value=l===null?'N/A':toIp(l);
+    firstInput.disabled=false; lastInput.disabled=false;
+  }
+
+  // Gate First/Last when Net & Broadcast correct (if required)
+  function updateGate(){
+    if(!requireGate?.checked){ firstInput.disabled=false; lastInput.disabled=false; return; }
+    const n=networkOf(state.ip,state.cidr), b=broadcastOf(state.ip,state.cidr);
+    const ok=(toInt(netInput.value.trim())===n && toInt(bcInput.value.trim())===b);
+    firstInput.disabled=!ok; lastInput.disabled=!ok;
+  }
+  netInput.addEventListener('input', updateGate); bcInput.addEventListener('input', updateGate);
+  requireGate?.addEventListener('change', updateGate);
+
+  // Evaluate & scoring
+  function evaluate(){
+    const cidr=state.cidr, ip=state.ip; const correctMask=toIp(maskFromCidr(cidr));
+    const n=networkOf(ip,cidr), b=broadcastOf(ip,cidr); const f=firstUsable(ip,cidr), l=lastUsable(ip,cidr);
+    const ansMask=maskInput.value.trim(), ansNet=netInput.value.trim(), ansBc=bcInput.value.trim(), ansFirst=firstInput.value.trim(), ansLast=lastInput.value.trim();
+    const checks={mask:false, net:false, bc:false, first:false, last:false};
+    checks.mask=(ansMask!=='') && isValidIpString(ansMask) && (toInt(ansMask)===maskFromCidr(cidr));
+    checks.net =(ansNet!=='')  && isValidIpString(ansNet)  && (toInt(ansNet)===n);
+    checks.bc  =(ansBc!=='')   && isValidIpString(ansBc)   && (toInt(ansBc)===b);
+    const gateOk = !requireGate?.checked || (checks.net && checks.bc);
+    if(f===null){
+      checks.first = gateOk && (ansFirst==='' || /^(n\/?a|none)$/i.test(ansFirst));
+      checks.last  = gateOk && (ansLast ==='' || /^(n\/?a|none)$/i.test(ansLast));
+    } else if(gateOk){
+      checks.first = isValidIpString(ansFirst) && (toInt(ansFirst)===f);
+      checks.last  = isValidIpString(ansLast)  && (toInt(ansLast)===l);
+    }
+
+    const total=['mask','net','bc','first','last'].reduce((s,k)=>s+(checks[k]?1:0),0);
+
+    // scoring
+    state.score += total;
+    if(total===5){ if(!state.tried) state.streak += 1; }
+    else { state.streak = 0; state.tried = true; }
+    if(state.score>state.best){ state.best=state.score; localStorage.setItem('ipv4Best', String(state.best)); }
+    renderStats();
+
+    let html = '<div><strong>Result:</strong> '+total+'/5</div>';
+    html += '<div class="small">Mask: '+(checks.mask?'✅':'❌')+' • Net: '+(checks.net?'✅':'❌')+' • Bcast: '+(checks.bc?'✅':'❌')+' • First: '+(checks.first?'✅':'❌')+' • Last: '+(checks.last?'✅':'❌')+'</div>';
+    const correct = '<div class="small" style="margin-top:6px"><strong>Correct</strong>: mask <code>'+correctMask+'</code>, network <code>'+toIp(n)+'</code>, broadcast <code>'+toIp(b)+'</code>'+(f===null?', first/last <code>N/A</code>':', first <code>'+toIp(f)+'</code>, last <code>'+toIp(l)+'</code>')+'</div>';
+
+    feedback.hidden=false;
+    if(total===5){ feedback.className='result ok'; html += '<div class="small">Perfect round! +5 points.</div>'; }
+    else if(total>=3){ feedback.className='result warn'; html += '<div class="small">Nice progress (+'+total+').</div>' + correct; }
+    else { feedback.className='result err'; html += '<div class="small">Start with network & broadcast.</div>' + correct; }
+    feedback.innerHTML=html;
+  }
+
+  // Wire buttons & keys
+  checkBtn.addEventListener('click', evaluate);
+  nextBtn.addEventListener('click', nextRound);
+  showBtn.addEventListener('click', showAnswer);
+  hintBtn.addEventListener('click', giveHint);
+  document.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter' && !e.ctrlKey){ e.preventDefault(); evaluate(); }
+    else if(e.key==='Enter' && e.ctrlKey){ e.preventDefault(); nextRound(); }
+  });
+
+  // Start
+  bestEl.textContent=state.best; renderStats(); nextRound();
+})();
+</script>
+</body>
+</html>
