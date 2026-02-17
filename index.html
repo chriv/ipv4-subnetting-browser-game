@@ -136,7 +136,7 @@
           </div>
           <div class="flex small" style="margin-top:8px">
             <label class="toggle"><input type="checkbox" id="excludeWeird" checked> Skip /31 and /32</label>
-            <label class="toggle"><input type="checkbox" id="requireGate" checked> Require Net/Bcast first</label>
+            <label class="toggle"><input type="checkbox" id="requireGate"> Require Net/Bcast first</label>
           </div>
           <div class="hr"></div>
           <details>
@@ -278,10 +278,10 @@
     lastInput.disabled  = requireGate?.checked ? true : false;
 
     maskInput.placeholder='e.g. 255.255.255.0';
-    netInput.placeholder='e.g. ' + toIp(networkOf(ip,cidr));
-    bcInput.placeholder='e.g. ' + toIp(broadcastOf(ip,cidr));
-    firstInput.placeholder='e.g. ' + (firstUsable(ip,cidr)===null?'N/A':toIp(firstUsable(ip,cidr)));
-    lastInput.placeholder='e.g. ' + (lastUsable(ip,cidr)===null?'N/A':toIp(lastUsable(ip,cidr)));
+    netInput.placeholder='e.g. 192.168.1.0';
+    bcInput.placeholder='e.g. 192.168.1.255';
+    firstInput.placeholder='e.g. 192.168.1.1';
+    lastInput.placeholder='e.g. 192.168.1.254';
 
     renderStats(); restartTimer(); maskInput.focus();
   }
