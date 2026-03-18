@@ -332,12 +332,15 @@
 
     const total=['mask','net','bc','first','last'].reduce((s,k)=>s+(checks[k]?1:0),0);
 
-    // scoring
-    state.score += total;
-    if(total===5){ if(!state.tried) state.streak += 1; }
-    else { state.streak = 0; state.tried = true; }
-    if(state.score>state.best){ state.best=state.score; localStorage.setItem('ipv4Best', String(state.best)); }
-    renderStats();
+    // scoring, should only change score if feedback is hidden
+    if (feedback.hidden = true) {
+      state.score += total;
+      if (total === 5) { if (!state.tried) state.streak += 1; }
+        else { state.streak = 0; state.tried = true; }
+      if (state.score > state.best) { state.best = state.score; localStorage.setItem('ipv4Best', String(state.best)); }
+      renderStats();
+    }
+    
 
     let html = '<div><strong>Result:</strong> '+total+'/5</div>';
     html += '<div class="small">Mask: '+(checks.mask?'✅':'❌')+' • Net: '+(checks.net?'✅':'❌')+' • Bcast: '+(checks.bc?'✅':'❌')+' • First: '+(checks.first?'✅':'❌')+' • Last: '+(checks.last?'✅':'❌')+'</div>';
