@@ -299,7 +299,9 @@
     const f=firstUsable(state.ip,state.cidr), l=lastUsable(state.ip,state.cidr);
     maskInput.value=mask; netInput.value=toIp(n); bcInput.value=toIp(b);
     firstInput.value=f===null?'N/A':toIp(f); lastInput.value=l===null?'N/A':toIp(l);
-    firstInput.disabled=false; lastInput.disabled=false;
+    firstInput.disabled = false; lastInput.disabled = false;
+    state.tried = true;
+    state.streak = 0;
   }
 
   // Gate First/Last when Net & Broadcast correct (if required)
@@ -332,12 +334,15 @@
 
     const total=['mask','net','bc','first','last'].reduce((s,k)=>s+(checks[k]?1:0),0);
 
-    // scoring
-    state.score += total;
-    if(total===5){ if(!state.tried) state.streak += 1; }
-    else { state.streak = 0; state.tried = true; }
-    if(state.score>state.best){ state.best=state.score; localStorage.setItem('ipv4Best', String(state.best)); }
-    renderStats();
+    // scoring, should only change score if feedback is hidden
+    if (state.tried === false) {
+      state.score += total;
+      total === 5 ? state.streak += 1 : state.streak = 0;
+      if (state.score > state.best) { state.best = state.score; localStorage.setItem('ipv4Best', String(state.best)); }
+      state.tried = true
+      renderStats();
+    }
+    
 
     let html = '<div><strong>Result:</strong> '+total+'/5</div>';
     html += '<div class="small">Mask: '+(checks.mask?'✅':'❌')+' • Net: '+(checks.net?'✅':'❌')+' • Bcast: '+(checks.bc?'✅':'❌')+' • First: '+(checks.first?'✅':'❌')+' • Last: '+(checks.last?'✅':'❌')+'</div>';
