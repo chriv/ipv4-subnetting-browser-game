@@ -1,5 +1,11 @@
 # IPv4 Subnetting Game for Networking Students
 
+<p align="center">
+  <a href="https://chriv.github.io/ipv4-subnetting-browser-game">
+    <img src="assets/IPv4_Subnet_Trainer_Image_With_Annotations.png" alt="IPv4 Subnetting Game Screenshot" width="800">
+  </a>
+</p>
+
 This is a work in progress, but here's something for networking students, network engineers, and IT professionals (yes, that includes you, networking nerds! 😉). How about a game for mastering IPv4 subnetting—computing subnet addresses, subnet masks, broadcast addresses, and first/last usable host addresses?
 
 Ask and ye shall receive: [chriv.github.io/ipv4-subnetting-browser-game](https://chriv.github.io/ipv4-subnetting-browser-game)
